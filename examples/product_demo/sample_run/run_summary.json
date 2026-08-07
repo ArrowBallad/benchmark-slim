@@ -1,0 +1,1 @@
+{"run_id":"sample_run","status":"existing","configured_models":["demo-model"],"tasks":["product_demo"],"stages":["evaluate","aggregate","compare_concurrency"]}

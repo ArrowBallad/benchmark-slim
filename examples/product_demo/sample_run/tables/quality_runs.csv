@@ -1,0 +1,2 @@
+﻿model_id,task_id,concurrency,total_requests,successful_requests,failed_requests,wall_seconds,success_rps,latency_mean_s,latency_p50_s,latency_p95_s,total_slots,correct_slots,incorrect_slots,accuracy,request_error_samples,json_parse_error_samples,structure_invalid_samples,evaluator_version,evaluation_policy
+demo-model,product_demo,1,20,20,0,0.2,100.0,0.01,0.01,0.01,100,95,5,0.95,0,0,1,v1,generic_exact_v1

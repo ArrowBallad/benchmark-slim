@@ -1,0 +1,6 @@
+﻿model_id,task_id,concurrency,target,subfield,total_slots,correct_slots,incorrect_slots,accuracy,structural_error_slots
+demo-model,product_demo,1,product,capacity,20,19,1,0.95,1
+demo-model,product_demo,1,product,color,20,19,1,0.95,1
+demo-model,product_demo,1,product,price,20,17,3,0.85,1
+demo-model,product_demo,1,shipping,available,20,20,0,1.0,0
+demo-model,product_demo,1,shipping,method,20,20,0,1.0,0

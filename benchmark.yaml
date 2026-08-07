@@ -1,0 +1,47 @@
+models:
+  - name: demo-model
+    served_model_name: your-model-name
+
+tasks:
+  - product_demo
+
+task_registry:
+  product_demo:
+    gold_path: examples/product_demo/gold.jsonl
+    prompt_path: examples/product_demo/prompt.txt
+    evaluator: generic_exact
+    evaluator_version: v1
+    targets:
+      - name: product
+        subfields: [color, capacity, price]
+      - name: shipping
+        subfields: [available, method]
+
+mode: run
+quality:
+  concurrencies: [1]
+  baseline_concurrency: 1
+
+server:
+  executable: vllm
+  host: 127.0.0.1
+  client_host: 127.0.0.1
+  port: 8000
+  args: {}
+
+performance:
+  enabled: false
+  concurrencies: [1]
+
+inference:
+  base_url: http://localhost:8000/v1
+  api_key: dummy
+  temperature: 0
+  max_tokens: 512
+  enable_thinking: null
+  response_format: json_object
+  timeout: 120
+  retry: 2
+
+gold:
+  limit: null

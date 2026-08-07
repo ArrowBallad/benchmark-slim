@@ -1,0 +1,4 @@
+Extract the product and shipping fields from the input text.
+Return exactly one JSON object with these keys:
+{"product":{"color":...,"capacity":...,"price":...},"shipping":{"available":...,"method":...}}
+Use null, an empty string, or false only when the input explicitly supports that value. Do not add keys.

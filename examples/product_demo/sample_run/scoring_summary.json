@@ -1,0 +1,31 @@
+{
+  "run_id": "sample_run",
+  "started_at": "2026-08-07T07:57:03.007714+00:00",
+  "finished_at": "2026-08-07T07:57:03.071622+00:00",
+  "requested_stages": [
+    "evaluate",
+    "aggregate",
+    "compare_concurrency"
+  ],
+  "evaluated_models": [
+    "demo-model"
+  ],
+  "evaluated_tasks": [
+    "product_demo"
+  ],
+  "evaluated_concurrencies": [
+    1
+  ],
+  "evaluation_status": "success",
+  "aggregate_status": "success",
+  "comparison_status": "success",
+  "status": "success",
+  "overall_status": "success",
+  "error": null,
+  "aggregate_tables": {
+    "quality_runs": "D:\\ArrowBallad\\medical_slice\\public-benchmark\\examples\\product_demo\\sample_run\\tables\\quality_runs.csv",
+    "field_metrics": "D:\\ArrowBallad\\medical_slice\\public-benchmark\\examples\\product_demo\\sample_run\\tables\\field_metrics.csv",
+    "vllm_runs": "D:\\ArrowBallad\\medical_slice\\public-benchmark\\examples\\product_demo\\sample_run\\tables\\vllm_runs.csv"
+  },
+  "comparison_path": "D:\\ArrowBallad\\medical_slice\\public-benchmark\\examples\\product_demo\\sample_run\\tables\\concurrency_changes.csv"
+}
