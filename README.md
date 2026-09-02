@@ -1,20 +1,13 @@
-# LLM Structured Extraction Benchmark
+一个轻量化的LLM结构化信息抽取评测工具，用于评测不同模型在同一套模型部署参数、推理配置和并发下的抽取质量和运行表现。
 
-English | [简体中文](README.zh-CN.md)
+任务、gold、目标字段和模型配置都通过YAML声明。会分为两步运行，运行后统一保存模型输出、逐字段评分、请求错误、结构错误、延迟和吞吐等结果，也支持在不重新请求模型的情况下指定输出文件夹来重新评分。需注意会分阶段运行，在所有模型完成任务后再进入评分阶段。只保留了最通用的设计思路，具体任务信息和逻辑已经去除。
 
-A lightweight benchmark for comparing structured extraction quality and runtime performance across LLMs and concurrency levels.
+# 主要功能
 
-It runs structured extraction tasks through an OpenAI-compatible API, evaluates declared fields with exact match, and summarizes accuracy, field-level results, request failures, latency, throughput, and changes across concurrency levels. An optional `vllm bench serve` stage is available for serving-performance tests.
-
-## Quick Start
-
-Install the core dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-The repository includes a synthetic demo with bundled predictions. You can run the scoring pipeline without a model or GPU:
+- YAML配置多个模型、任务和目标字段，会自动来GET检查服务状态，批量推理，并切换模型；
+- 保存原始输出结果，评测逻辑和模型推理分离，对于不同的评测方式可以无需重新运行模型就复核评分；
+- 输出总体、任务级、字段级评测结果；
+- 可选执行 vllm serving performance benchmark来评测并发性能。
 
 ```bash
 python -m benchmark.cli \
@@ -23,40 +16,45 @@ python -m benchmark.cli \
   --run-id examples/product_demo/sample_run
 ```
 
-To benchmark your own model, configure an OpenAI-compatible endpoint and model name in YAML, then run:
+# 设计思路
 
-```bash
-python -m benchmark.cli --config examples/product_demo/benchmark.yaml
-```
+一个很简单的问题：怎么来评价结构化信息抽取任务？
 
-See [CONFIG.md](CONFIG.md) for configuration options.
+## STEP ZERO
 
-## CLI
+首先，在评价结构化任务之前，先要定义什么是结构化任务。
 
-```text
-python -m benchmark.cli [--config PATH] [--dry-run] [--score-only] [--run-id RUN]
-```
+假设只有一段输入文本，还没有定义要抽取的实体。在一切开始之前，必须要定义属性和子属性、明确的输出结构，以及最重要的是知道任务目标究竟是什么，并在任务下的不同分类下都保持能够有一套和任务目标相符、并且可跨分类保持一致的评分规则。
 
-`--config PATH` specifies the YAML configuration file. If omitted, the root `benchmark.yaml` is used.
+属性字段并不是越多越完整就越好。一个字段是否值得加入评测，至少要考虑：
 
-`--dry-run` validates the configuration and prints the planned workflow without running inference or benchmarks.
+- 它是否是实际任务中有意义的信息，可以根据现实知识来考虑；
+- 属性名和子属性名本身是否具有足够明确的语义和区分度，不要有模糊交集，不然很容易出现模型不知道该把信息放到哪里；
+- 是否需要额外的领域知识或复杂推断才能从文本得到该字段；
+- 属性的内容是否有区分度，如果提出来全是几乎完全一致的内容那么它是否还有价值；
+- 当前样本中是否存在足够的有效案例，使这个字段真的能拿来测试。
 
-`--score-only` skips model inference and evaluates existing predictions. It is used together with `--run-id`.
+定好属性后，可以来制作gold。这部分就要明确具体任务里面的规则了。简单来说，做到能够回答：如果模型和gold不一致，我能不能明确判断到底是谁错了。
 
-`--run-id RUN` opens an existing run directory, or a run under `runs/`, for scoring.
+这种规则最好是明确写出来，并给出相应的正反例，给人看和给模型看都很有用，不如说，非常有用！
 
-## Evaluation
+## Quality & Performance
 
-Scoring fields are explicitly defined in YAML. The default `generic_exact` evaluator performs field-level exact matching, with leading and trailing whitespace removed from strings. Different value types remain different, for example `null != ""` and `false != 0`.
+项目里是把各个参数全放在yaml里面，对于同一轮比较，各模型使用同一套任务和条件，尽量把差异限制在模型本身。当然，选每个模型自己最适合的条件也是一种做法。
 
-Each run stores predictions, evaluation details, and CSV summaries for overall quality, per-field metrics, concurrency changes, and optional vLLM performance results.
+可选打开 vllm bench serve来单独测试性能表现，因为真实任务文本长度和输出长度的差异会很大影响prefill和decode，并不能直接解释成模型的通用吞吐能力。
 
-## Tests
+## 怎么来评价
 
-```bash
-python -m unittest discover -s tests
-```
+实际的评测方法和想看的指标就要看具体任务需求，准确率定义要提一下，按槽位算、按属性算、按一整条文本算都是不同的计算方式，也要看具体的非空属性，如果空的属性过多、模型全交白卷也能拿到高分的状况下，整体的空和非空都拿来算准确率就会导致虚高，所以非空召回率和非空准确率也要拿来判断。
 
-## License
+模型和推理是两个不同的问题，所以不应该绑死在一起。这里把它们分成了两个能独立运行的步骤，当gold或评测方法被复核和修正时，可以直接检查已有模型输出，不必再浪费时间重跑一遍。
 
-MIT
+这点在制作gold时也很方便，可以通过几个已知表现模式不同的快速模型（推荐MoE模型）来跑一遍，模型结果和gold一致，并不能证明双方一定都对；但模型和gold不一致，通常是非常有价值的人工复核入口；如果你用一个太激进、一个太保守的模型那么区别更明显。区分到底是模型抽取错误、gold标注错误、边界不明确、prompt不清楚、脚本评测匹配规则和任务目标不一致等等。但是要注意修改的到底是通用的东西，还是在不知不觉时已经在拿测试集来开发并且可能拟合了，一定要分开测试集和开发集。
+
+# 经验总结
+
+- 把功能脚本拆开并模块化，但不要把运行阶段拆得太碎，容易出问题；只保留必要的分阶段。
+- 需求是从实际任务里长出来的，要明确你的任务哪些能够复用，边界和规则到底是什么，自己先设计一下想一想，动用纸笔乱写乱画，不要直接全部交给ai，在你没有完全想清楚之前，ai的文本和结果来得太轻易了，很容易把它给出的方案当成你自己的方案，它的思考当成你自己的思考。
+- 不要重复造轮子，除非你确实有特殊的需求。
+- reinforcement learning真是太好用了，多去action和environment交互，多迭代来修正policy。

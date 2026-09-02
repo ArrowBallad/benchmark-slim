@@ -1,7 +1,5 @@
 # 配置说明
 
-[English](CONFIG.md)
-
 评测通过 YAML 文件配置。`gold_path`、`prompt_path` 等相对路径均以当前 YAML 文件所在目录为基准解析。
 
 一个最小配置如下：
